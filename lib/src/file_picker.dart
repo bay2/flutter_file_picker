@@ -152,6 +152,9 @@ abstract class FilePicker extends PlatformInterface {
   }) async =>
       throw UnimplementedError('getDirectoryPath() has not been implemented.');
 
+  Future<String?> pickDirectory({String? toPath}) async =>
+      throw UnimplementedError('pickDirectory() has not been implemented.');
+
   /// Opens a save file dialog which lets the user select a file path and a file
   /// name to save a file.
   ///

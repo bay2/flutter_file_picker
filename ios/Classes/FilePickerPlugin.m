@@ -23,6 +23,7 @@
 @property (nonatomic) BOOL loadDataToMemory;
 @property (nonatomic) BOOL allowCompression;
 @property (nonatomic) dispatch_group_t group;
+@property (nonatomic, copy) NSString *toPath;
 @end
 
 @implementation FilePickerPlugin
@@ -94,6 +95,9 @@
     }
     
     if([call.method isEqualToString:@"dir"]) {
+
+        NSDictionary *arguments = call.arguments;
+        _toPath = [arguments valueForKey:@"toPath"];
         if (@available(iOS 13, *)) {
 #ifdef PICKER_DOCUMENT
             [self resolvePickDocumentWithMultiPick:NO pickDirectory:YES];
@@ -368,10 +372,49 @@ didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls{
     }
     
     [self.documentPickerController dismissViewControllerAnimated:YES completion:nil];
+
     
     if(controller.documentPickerMode == UIDocumentPickerModeOpen) {
-        _result([urls objectAtIndex:0].path);
-        _result = nil;
+        
+        
+        if (self->_toPath) {
+            
+            
+            [[NSFileCoordinator new] coordinateReadingItemAtURL:[urls objectAtIndex:0] options:0 error:NULL byAccessor:^(NSURL * _Nonnull newURL) {
+                
+                
+                
+                dispatch_async(dispatch_queue_create("copy_path", 0), ^{
+                    
+                    if (![NSFileManager.defaultManager fileExistsAtPath:self->_toPath]) {
+                        
+                        [NSFileManager.defaultManager createDirectoryAtPath:self->_toPath withIntermediateDirectories:YES attributes:NULL error:NULL];
+                        
+                    }
+                    
+                    self->_toPath = [self->_toPath stringByAppendingPathComponent:newURL.lastPathComponent];
+
+                    if ([newURL startAccessingSecurityScopedResource]) {
+                        [NSFileManager.defaultManager copyItemAtURL:newURL toURL:[[NSURL alloc] initFileURLWithPath:self->_toPath] error:nil];
+                        [newURL stopAccessingSecurityScopedResource];
+                        self->_result(newURL.path);
+                        self->_result = nil;
+                    }
+
+                });
+                
+                
+       
+                
+
+        
+            }];
+            
+        } else {
+            self->_result([urls objectAtIndex:0].path);
+            self->_result = nil;
+        }
+
         return;
     }
     

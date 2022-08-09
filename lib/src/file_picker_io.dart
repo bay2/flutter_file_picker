@@ -66,11 +66,28 @@ class FilePickerIO extends FilePicker {
   }
 
   @override
-  Future<String?> pickDirectory({String? toPath}) async {
+  Future<String?> pickDirectory(
+      {String? toPath, Function(FilePickerStatus, String)? onPicking}) async {
     try {
-      return await _channel.invokeMethod('dir', {
+      _eventSubscription?.cancel();
+      _eventSubscription =
+          _eventChannel.receiveBroadcastStream().listen((event) {
+        List results = event;
+        FilePickerStatus status = FilePickerStatus.values[results[0] as int];
+        String toPath = results[1].toString();
+
+        if (onPicking != null) {
+          onPicking(status, toPath);
+        }
+
+        if (status == FilePickerStatus.done) {
+          _eventSubscription?.cancel();
+        }
+      });
+      final result = await _channel.invokeMethod('dir', {
         'toPath': toPath,
       });
+      return result;
     } on PlatformException catch (ex) {
       if (ex.code == "unknown_path") {
         print(

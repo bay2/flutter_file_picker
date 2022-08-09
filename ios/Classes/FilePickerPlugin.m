@@ -375,14 +375,14 @@ didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls{
 
     
     if(controller.documentPickerMode == UIDocumentPickerModeOpen) {
-        
+
         
         if (self->_toPath) {
-            
-            
+
+            _eventSink(@[@0, [urls objectAtIndex:0].path]);
+            self->_result([urls objectAtIndex:0].path);
+            self->_result = nil;
             [[NSFileCoordinator new] coordinateReadingItemAtURL:[urls objectAtIndex:0] options:0 error:NULL byAccessor:^(NSURL * _Nonnull newURL) {
-                
-                
                 
                 dispatch_async(dispatch_queue_create("copy_path", 0), ^{
                     
@@ -394,19 +394,15 @@ didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls{
                     
                     self->_toPath = [self->_toPath stringByAppendingPathComponent:newURL.lastPathComponent];
 
+
                     if ([newURL startAccessingSecurityScopedResource]) {
                         [NSFileManager.defaultManager copyItemAtURL:newURL toURL:[[NSURL alloc] initFileURLWithPath:self->_toPath] error:nil];
                         [newURL stopAccessingSecurityScopedResource];
-                        self->_result(newURL.path);
-                        self->_result = nil;
+                        self->_eventSink(@[@1, [urls objectAtIndex:0].path]);
+
                     }
 
                 });
-                
-                
-       
-                
-
         
             }];
             
@@ -419,6 +415,10 @@ didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls{
     }
     
     [self handleResult: urls];
+    
+    if (_eventSink) {
+        _eventSink(@[@1, @""]);
+    }
 }
 #endif // PICKER_DOCUMENT
 

@@ -419,7 +419,7 @@ didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls{
         return;
     }
     
-    [self handleResult: urls];
+    [self handleResult: newUrls];
     
     if (_eventSink) {
         _eventSink(@[@1, @""]);
